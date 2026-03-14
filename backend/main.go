@@ -39,6 +39,9 @@ func main() {
 	mux.HandleFunc("PATCH /resources/{id}", resourceHandler.Update)
 	mux.HandleFunc("GET /resources/{id}/events", resourceHandler.GetEvents)
 
+	// Me
+	mux.HandleFunc("GET /me", resourceHandler.Me)
+
 	// Resource -> Alarms
 	mux.HandleFunc("GET /resources/{id}/alarms", resourceHandler.GetAlarms)
 

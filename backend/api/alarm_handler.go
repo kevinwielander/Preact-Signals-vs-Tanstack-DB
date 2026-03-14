@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"slices"
+	"strconv"
 	"sync"
 	"time"
 
@@ -98,6 +100,18 @@ func (h *AlarmHandler) Get(w http.ResponseWriter, r *http.Request) {
 func (h *AlarmHandler) List(w http.ResponseWriter, r *http.Request) {
 	resourceID := r.URL.Query().Get("resourceId")
 
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page < 1 {
+		page = 1
+	}
+	pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
 	h.mu.RLock()
 	alarms := make([]*domain.Alarm, 0, len(h.alarms))
 	for _, alarm := range h.alarms {
@@ -108,8 +122,27 @@ func (h *AlarmHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 	h.mu.RUnlock()
 
+	slices.SortFunc(alarms, func(a, b *domain.Alarm) int {
+		return b.CreatedOnOffset - a.CreatedOnOffset
+	})
+
+	total := len(alarms)
+	start := (page - 1) * pageSize
+	if start > total {
+		start = total
+	}
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(alarms)
+	json.NewEncoder(w).Encode(map[string]any{
+		"items":    alarms[start:end],
+		"total":    total,
+		"page":     page,
+		"pageSize": pageSize,
+	})
 }
 
 func (h *AlarmHandler) Update(w http.ResponseWriter, r *http.Request) {

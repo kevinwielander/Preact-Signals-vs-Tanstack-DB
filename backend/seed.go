@@ -175,6 +175,7 @@ func main() {
 		}
 	}
 
+	fmt.Printf("\n\"Me\" resource: %s (first created, used by GET /me)\n", resourceIDs[0])
 	fmt.Println("Done! Seeded 50 resources and 500 alarms.")
 }
 

@@ -15,6 +15,7 @@ type ResourceHandler struct {
 	mu         sync.RWMutex
 	resources  map[string]*domain.Resource
 	listAlarms func() []*domain.Alarm
+	meID       string
 }
 
 func NewResourceHandler(store *events.Store, listAlarms func() []*domain.Alarm) *ResourceHandler {
@@ -66,6 +67,9 @@ func (h *ResourceHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.mu.Lock()
+	if h.meID == "" {
+		h.meID = id
+	}
 	h.resources[id] = resource
 	h.mu.Unlock()
 
@@ -159,6 +163,20 @@ func (h *ResourceHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resource)
+}
+
+func (h *ResourceHandler) Me(w http.ResponseWriter, r *http.Request) {
+	h.mu.RLock()
+	res, ok := h.resources[h.meID]
+	h.mu.RUnlock()
+
+	if !ok {
+		http.Error(w, "no resources exist", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
 }
 
 func (h *ResourceHandler) GetAlarms(w http.ResponseWriter, r *http.Request) {
