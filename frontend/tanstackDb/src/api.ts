@@ -38,11 +38,14 @@ export async function fetchResources(): Promise<Resource[]> {
 export async function patchAlarm(
   id: string,
   field: string,
-  value: unknown
+  value: unknown,
+  meId?: string
 ): Promise<Alarm> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (meId) headers["X-Resource-Id"] = meId;
   const res = await fetch(`${BASE}/alarms/${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ [field]: value }),
   });
   if (!res.ok) throw new Error("Failed to patch alarm");

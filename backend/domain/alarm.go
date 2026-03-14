@@ -32,7 +32,8 @@ type AlarmCreatedData struct {
 }
 
 type FieldUpdatedData struct {
-	Field    string `json:"field"`
-	OldValue any    `json:"oldValue"`
-	NewValue any    `json:"newValue"`
+	Field     string `json:"field"`
+	OldValue  any    `json:"oldValue"`
+	NewValue  any    `json:"newValue"`
+	ChangedBy string `json:"changedBy"`
 }

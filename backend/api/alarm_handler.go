@@ -162,6 +162,8 @@ func (h *AlarmHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	changedBy := r.Header.Get("X-Resource-Id")
+
 	for field, newValue := range patch {
 		var oldValue any
 		switch field {
@@ -180,9 +182,10 @@ func (h *AlarmHandler) Update(w http.ResponseWriter, r *http.Request) {
 		}
 
 		evt, _ := h.store.Append(id, domain.AggregateAlarm, domain.EventAlarmFieldUpdated, domain.FieldUpdatedData{
-			Field:    field,
-			OldValue: oldValue,
-			NewValue: newValue,
+			Field:     field,
+			OldValue:  oldValue,
+			NewValue:  newValue,
+			ChangedBy: changedBy,
 		})
 
 		switch field {

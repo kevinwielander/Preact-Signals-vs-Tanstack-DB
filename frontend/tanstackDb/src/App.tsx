@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMe } from "./hooks";
+import { useWebSocket } from "./useWebSocket";
 import Sidebar from "./components/Sidebar";
 import AlarmDetail from "./components/AlarmDetail";
 import AlarmTable from "./components/AlarmTable";
@@ -7,6 +8,7 @@ import AlarmTable from "./components/AlarmTable";
 export default function App() {
   const [selectedAlarmId, setSelectedAlarmId] = useState<string | null>(null);
   const { data: me } = useMe();
+  useWebSocket();
 
   return (
     <div className="app-layout">
