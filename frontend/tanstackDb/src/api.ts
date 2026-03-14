@@ -29,6 +29,12 @@ export async function fetchAlarm(id: string): Promise<Alarm> {
   return res.json();
 }
 
+export async function fetchResources(): Promise<Resource[]> {
+  const res = await fetch(`${BASE}/resources`);
+  if (!res.ok) throw new Error("Failed to fetch resources");
+  return res.json();
+}
+
 export async function patchAlarm(
   id: string,
   field: string,

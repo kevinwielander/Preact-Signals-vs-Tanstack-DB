@@ -4,7 +4,7 @@ import {
   useQueryClient,
   keepPreviousData,
 } from "@tanstack/react-query";
-import { fetchMe, fetchAlarms, fetchAlarm, patchAlarm } from "./api";
+import { fetchMe, fetchAlarms, fetchAlarm, fetchResources, patchAlarm } from "./api";
 
 export function useMe() {
   return useQuery({
@@ -12,6 +12,25 @@ export function useMe() {
     queryFn: fetchMe,
     staleTime: Infinity,
   });
+}
+
+export function useResources() {
+  return useQuery({
+    queryKey: ["resources"],
+    queryFn: fetchResources,
+    staleTime: Infinity,
+  });
+}
+
+export function useResourceMap() {
+  const { data: resources } = useResources();
+  const map = new Map<string, string>();
+  if (resources) {
+    for (const r of resources) {
+      map.set(r.id, r.displayName);
+    }
+  }
+  return map;
 }
 
 export function useMyAlarms(meId: string | undefined) {
