@@ -1,0 +1,373 @@
+openapi: "3.0.3"
+info:
+  title: Event-Sourced Alarms & Resources API
+  version: "1.0.0"
+  description: |
+    In-memory event-sourced backend for Alarms and Resources.
+    Every field update is stored as an individual event.
+    WebSocket at `/ws` broadcasts all events in real time.
+
+servers:
+  - url: http://localhost:8080
+
+paths:
+  /alarms:
+    get:
+      summary: List alarms
+      operationId: listAlarms
+      parameters:
+        - name: resourceId
+          in: query
+          required: false
+          description: Filter alarms assigned to this resource ID
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Array of alarms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alarm"
+    post:
+      summary: Create alarm
+      operationId: createAlarm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlarmCreate"
+      responses:
+        "201":
+          description: Created alarm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alarm"
+
+  /alarms/{id}:
+    get:
+      summary: Get alarm by ID
+      operationId: getAlarm
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Alarm detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alarm"
+        "404":
+          description: Alarm not found
+    patch:
+      summary: Update alarm fields
+      description: Each changed field emits a separate AlarmFieldUpdated event
+      operationId: updateAlarm
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlarmPatch"
+      responses:
+        "200":
+          description: Updated alarm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alarm"
+        "404":
+          description: Alarm not found
+
+  /alarms/{id}/events:
+    get:
+      summary: Get alarm event history
+      operationId: getAlarmEvents
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Array of events for this alarm
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+        "404":
+          description: Alarm not found
+
+  /resources:
+    get:
+      summary: List resources
+      operationId: listResources
+      responses:
+        "200":
+          description: Array of resources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Resource"
+    post:
+      summary: Create resource
+      operationId: createResource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceCreate"
+      responses:
+        "201":
+          description: Created resource
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+
+  /resources/{id}:
+    get:
+      summary: Get resource by ID
+      operationId: getResource
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Resource detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+        "404":
+          description: Resource not found
+    patch:
+      summary: Update resource fields
+      description: Each changed field emits a separate ResourceFieldUpdated event
+      operationId: updateResource
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourcePatch"
+      responses:
+        "200":
+          description: Updated resource
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+        "404":
+          description: Resource not found
+
+  /resources/{id}/events:
+    get:
+      summary: Get resource event history
+      operationId: getResourceEvents
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Array of events for this resource
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+        "404":
+          description: Resource not found
+
+  /resources/{id}/alarms:
+    get:
+      summary: Get alarms assigned to a resource
+      operationId: getResourceAlarms
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Array of alarms assigned to this resource
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alarm"
+        "404":
+          description: Resource not found
+
+  /ws:
+    get:
+      summary: WebSocket endpoint
+      description: |
+        Upgrade to WebSocket. All events (creates and field updates)
+        are broadcast as JSON messages to connected clients.
+      responses:
+        "101":
+          description: Switching Protocols (WebSocket upgrade)
+
+components:
+  parameters:
+    ID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    Alarm:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        status:
+          type: string
+          enum: [active, acknowledged, resolved]
+        assignedResources:
+          type: array
+          items:
+            type: string
+        eventHash:
+          type: string
+        eventNumber:
+          type: integer
+        archivedOnOffset:
+          type: integer
+          nullable: true
+        createdOnOffset:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AlarmCreate:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        assignedResources:
+          type: array
+          items:
+            type: string
+
+    AlarmPatch:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        status:
+          type: string
+          enum: [active, acknowledged, resolved]
+        assignedResources:
+          type: array
+          items:
+            type: string
+
+    Resource:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+        isUserAssociated:
+          type: boolean
+        thumbnail:
+          type: string
+        eventHash:
+          type: string
+        eventNumber:
+          type: integer
+        archivedOnOffset:
+          type: integer
+          nullable: true
+        createdOnOffset:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ResourceCreate:
+      type: object
+      required: [displayName, email]
+      properties:
+        displayName:
+          type: string
+        email:
+          type: string
+        isUserAssociated:
+          type: boolean
+        thumbnail:
+          type: string
+
+    ResourcePatch:
+      type: object
+      properties:
+        displayName:
+          type: string
+        email:
+          type: string
+        isUserAssociated:
+          type: boolean
+        thumbnail:
+          type: string
+
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+        aggregateId:
+          type: string
+        aggregateType:
+          type: string
+        eventType:
+          type: string
+        data:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: integer
+        offset:
+          type: integer
+        hash:
+          type: string
